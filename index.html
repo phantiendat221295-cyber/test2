@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Góc Học Tập Lớp 12</title>
-    <!-- Thư viện Icon FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; transition: all 0.3s ease; }
@@ -14,7 +13,7 @@
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
         
-        .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); position: relative; }
         h2 { border-bottom: 2px solid #3498db; padding-bottom: 8px; color: #3498db; margin-top: 0; font-size: 1.2rem; }
         
         .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
@@ -23,21 +22,18 @@
         button { background-color: #2ecc71; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         button:hover { background-color: #27ae60; transform: translateY(-2px); }
         
-        ul { list-style: none; padding: 0; margin: 0; }
+        ul { list-style: none; padding: 0; margin: 0; min-height: 50px; }
         li { background: #fdfdfd; border: 1px solid #f1f2f6; border-left: 4px solid #3498db; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-radius: 6px; }
         li:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         
-        /* Chức năng hoàn thành */
         .item-content { display: flex; align-items: center; gap: 12px; flex: 1; cursor: pointer; }
         .completed .item-text { text-decoration: line-through; color: #a4b0be; }
         .completed { border-left-color: #2ecc71; background: #f9fdfa; }
         
-        /* Nút thao tác */
         .actions { display: flex; gap: 8px; }
-        .btn-icon { background: none; border: none; padding: 5px; border-radius: 4px; cursor: pointer; color: #a4b0be; padding: 5px 8px; }
+        .btn-icon { background: none; border: none; padding: 5px; border-radius: 4px; cursor: pointer; color: #a4b0be; }
         .btn-icon:hover { background: #f1f2f6; color: #e74c3c; transform: translateY(0); }
         
-        /* Màu sắc Tag tự động theo môn */
         .tag { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
         .tag-Toán { background: #fee2e2; color: #991b1b; }
         .tag-Văn { background: #ffedd5; color: #c2410c; }
@@ -47,9 +43,10 @@
         .tag-Sinh { background: #fae8ff; color: #86198f; }
         .tag-default { background: #f1f5f9; color: #475569; }
 
-        /* Toast thông báo góc màn hình */
-        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 6px; padding: 12px 20px; position: fixed; z-index: 1; right: 20px; bottom: 30px; font-size: 14px; transform: translateY(20px); opacity: 0; }
+        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 6px; padding: 12px 20px; position: fixed; right: 20px; bottom: 30px; font-size: 14px; transform: translateY(20px); opacity: 0; z-index: 999; }
         #toast.show { visibility: visible; transform: translateY(0); opacity: 1; }
+        
+        .loading { text-align: center; color: #7f8c8d; font-size: 14px; padding: 20px; display: none; }
     </style>
 </head>
 <body>
@@ -74,6 +71,7 @@
                 <input type="text" id="noiDungMon" placeholder="Mục tiêu (vd: Luyện 10 đề)...">
                 <button onclick="themKeHoachMon()"><i class="fa-solid fa-plus"></i></button>
             </div>
+            <div id="loadingMon" class="loading"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...</div>
             <ul id="dsKeHoachMon"></ul>
         </div>
 
@@ -85,28 +83,67 @@
                 <input type="text" id="congViec" placeholder="Nhiệm vụ (vd: Học Lý thuyết)...">
                 <button onclick="themTKB()"><i class="fa-solid fa-plus"></i></button>
             </div>
+            <div id="loadingTKB" class="loading"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...</div>
             <ul id="dsTKB"></ul>
         </div>
     </div>
 </div>
 
-<div id="toast"><i class="fa-solid fa-circle-check"></i> <span id="toast-msg">Thông báo</span></div>
+<div id="toast"><i class="fa-solid fa-circle-info"></i> <span id="toast-msg">Thông báo</span></div>
 
 <script>
-    // BẠN HÃY DÁN LINK APPS SCRIPT VÀO GIỮA 2 DẤU NGOẶC KÉP Ở DÒNG DƯỚI NÀY:
+    // ---------------------------------------------------------
+    // BƯỚC QUAN TRỌNG: DÁN LINK API MỚI VÀO DÒNG DƯỚI ĐÂY
+    // ---------------------------------------------------------
     const GOOGLE_SHEET_API = "https://script.google.com/macros/s/AKfycbzFDzmGeYGz7fOqKOZaBwJHadivmr-nzYLTkd51rpgkLxVs1cTsLUvKpQezIxvIrs_4/exec";
 
     document.addEventListener('DOMContentLoaded', () => {
         hienThiKeHoach();
         hienThiTKB();
+        dongBoDuLieuTuSheet(); // Tự động kéo dữ liệu khi mở web
     });
 
-    // --- HỆ THỐNG THÔNG BÁO TOAST ---
     function showToast(message) {
         const toast = document.getElementById("toast");
         document.getElementById("toast-msg").innerText = message;
         toast.className = "show";
-        setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+        setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+    }
+
+    // --- HÀM TẢI DỮ LIỆU TỪ GOOGLE SHEETS (GET) ---
+    function dongBoDuLieuTuSheet() {
+        if(!GOOGLE_SHEET_API.includes("script.google.com")) return;
+        
+        document.getElementById('loadingMon').style.display = 'block';
+        document.getElementById('loadingTKB').style.display = 'block';
+
+        fetch(GOOGLE_SHEET_API)
+            .then(res => res.json())
+            .then(data => {
+                localStorage.setItem('keHoachMon', JSON.stringify(data.mon));
+                localStorage.setItem('tkbNgay', JSON.stringify(data.tkb));
+                hienThiKeHoach();
+                hienThiTKB();
+                showToast("Đã đồng bộ dữ liệu mới nhất!");
+            })
+            .catch(err => {
+                console.error(err);
+                showToast("Dùng dữ liệu ngoại tuyến (Lỗi mạng)");
+            })
+            .finally(() => {
+                document.getElementById('loadingMon').style.display = 'none';
+                document.getElementById('loadingTKB').style.display = 'none';
+            });
+    }
+
+    // --- HÀM GỬI YÊU CẦU LÊN GOOGLE SHEETS (POST) ---
+    function guiLenSheet(payload) {
+        if(GOOGLE_SHEET_API.includes("script.google.com")) {
+            fetch(GOOGLE_SHEET_API, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            }).catch(e => console.log("Lỗi đồng bộ ngầm:", e));
+        }
     }
 
     // --- XỬ LÝ MÔN HỌC ---
@@ -122,15 +159,9 @@
         
         document.getElementById('noiDungMon').value = '';
         hienThiKeHoach();
+        
+        guiLenSheet({ action: 'add', type: 'mon', id: id, mon: mon, noiDung: noiDung });
         showToast("Đã lưu mục tiêu " + mon);
-
-        // Đẩy dữ liệu lên Google Sheets chạy ngầm
-        if(GOOGLE_SHEET_API.includes("script.google.com")) {
-            fetch(GOOGLE_SHEET_API, {
-                method: 'POST',
-                body: JSON.stringify({ type: 'mon', id: id, mon: mon, noiDung: noiDung })
-            }).catch(e => console.log("Lỗi đồng bộ:", e));
-        }
     }
 
     function hienThiKeHoach() {
@@ -151,7 +182,7 @@
         `}).join('');
     }
 
-    // --- XỬ LÝ THỜI KHÓA BIỂU NGÀY ---
+    // --- XỬ LÝ THỜI KHÓA BIỂU ---
     function themTKB() {
         const gio = document.getElementById('gioHoc').value;
         const congViec = document.getElementById('congViec').value.trim();
@@ -165,15 +196,9 @@
 
         document.getElementById('congViec').value = '';
         hienThiTKB();
-        showToast("Đã thêm lịch lúc " + gio);
 
-        // Đẩy dữ liệu lên Google Sheets chạy ngầm
-        if(GOOGLE_SHEET_API.includes("script.google.com")) {
-            fetch(GOOGLE_SHEET_API, {
-                method: 'POST',
-                body: JSON.stringify({ type: 'tkb', id: id, gio: gio, congViec: congViec })
-            }).catch(e => console.log("Lỗi đồng bộ:", e));
-        }
+        guiLenSheet({ action: 'add', type: 'tkb', id: id, gio: gio, congViec: congViec });
+        showToast("Đã thêm lịch lúc " + gio);
     }
 
     function hienThiTKB() {
@@ -192,7 +217,7 @@
         `).join('');
     }
 
-    // --- CÁC HÀM TIỆN ÍCH CHUNG (Check & Xóa) ---
+    // --- TIỆN ÍCH: ĐÁNH DẤU XONG & XÓA ---
     function toggleHoanThanh(type, id) {
         const key = type === 'mon' ? 'keHoachMon' : 'tkbNgay';
         let ds = JSON.parse(localStorage.getItem(key) || '[]');
@@ -201,7 +226,8 @@
             ds[index].completed = !ds[index].completed;
             localStorage.setItem(key, JSON.stringify(ds));
             type === 'mon' ? hienThiKeHoach() : hienThiTKB();
-            if(ds[index].completed) showToast("Tuyệt vời! Đã hoàn thành nhiệm vụ 👏");
+            
+            guiLenSheet({ action: 'toggle', type: type, id: id });
         }
     }
 
@@ -211,6 +237,8 @@
         ds = ds.filter(item => item.id !== id);
         localStorage.setItem(key, JSON.stringify(ds));
         type === 'mon' ? hienThiKeHoach() : hienThiTKB();
+        
+        guiLenSheet({ action: 'delete', type: type, id: id });
         showToast("Đã xóa mục!");
     }
 </script>
